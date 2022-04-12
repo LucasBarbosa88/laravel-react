@@ -1,0 +1,61 @@
+version: '3.7'
+services:
+
+    frontend:
+      build:
+        context: ./crud-react 
+      ports:
+        - "8080:80"
+      networks:
+        - app-network
+
+    backend:
+      build:
+        context: ./embalo-test/
+      restart: unless-stopped
+      environment:
+        MYSQL_DATABASE: embalo_test
+        MYSQL_ROOT_PASSWORD: test
+        MYSQL_PASSWORD: root
+        MYSQL_USER: test
+      working_dir: /var/www
+      volumes:
+        - ./embalo-test:/var/www
+      ports:
+        - "8000:8000"
+      networks:
+        - app-network
+        - db
+
+    appdb:
+      image: mysql:5.7
+      restart: unless-stopped
+      environment:
+        MYSQL_DATABASE: embalo_test
+        MYSQL_ROOT_PASSWORD: test
+        MYSQL_PASSWORD: root
+        MYSQL_USER: test
+      volumes:
+        - ./initdb:/docker-entrypoint-initdb.d
+      ports:
+        - 3306:3306
+      networks:
+        - db
+
+    phpmyadmin:
+      image: phpmyadmin/phpmyadmin
+      restart: unless-stopped
+      environment:
+        PMA_HOST: appdb
+        MYSQL_ROOT_PASSWORD: root
+      depends_on:
+        - appdb
+      ports:
+        - 8443:80
+      networks:
+        - db
+
+networks:
+  app-network:
+    driver: bridge
+  db:
